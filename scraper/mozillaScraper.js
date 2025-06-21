@@ -18,11 +18,9 @@ export async function scrapeMozilla() {
 
     let articulos = [];
     let haySiguiente = true;
-    let contadorPaginas = 0;
-    let maxPaginas = 5;
     let urlAnterior = '';
 
-    while (haySiguiente && contadorPaginas < maxPaginas) {
+    while (haySiguiente) {
         const nuevosArticulos = await page.evaluate(() => {
             const data = [];
             const elementos = document.querySelectorAll('li.list-item.row.listing');
@@ -38,7 +36,7 @@ export async function scrapeMozilla() {
 
             return data;
 
-            contadorPaginas = contadorPaginas +1;
+            
 
         });
 
