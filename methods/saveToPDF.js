@@ -1,6 +1,7 @@
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 
+
 export function saveToPDF(data, filename) {
     const pdf = new PDFDocument();
     pdf.pipe(fs.createWriteStream(`./data/${filename}.pdf`));

@@ -5,20 +5,24 @@ import { saveToExcel } from '../methods/saveToEXEL.js';
 import { saveToTXT } from '../methods/saveToTXT.js';
 import { saveToPDF } from '../methods/saveToPDF.js';
 
+
 const URL = 'https://hacks.mozilla.org/';
 
 export async function scrapeMozilla() {
-    const browser = await puppeteer.launch({ headless: false, defaultViewport: null });
+    const browser = await puppeteer.launch({ headless: true, defaultViewport: null });
+    console.log('Ingreso a la pagina')
     const page = await browser.newPage();
     await page.goto(URL, { waitUntil: 'domcontentloaded' });
 
-    await page.waitForSelector('li.list-item.row.listing', { timeout: 60000 });
+    await page.waitForSelector('li.list-item.row.listing', { timeout: 80000 });
 
     let articulos = [];
     let haySiguiente = true;
+    let contadorPaginas = 0;
+    let maxPaginas = 5;
     let urlAnterior = '';
 
-    while (haySiguiente) {
+    while (haySiguiente && contadorPaginas < maxPaginas) {
         const nuevosArticulos = await page.evaluate(() => {
             const data = [];
             const elementos = document.querySelectorAll('li.list-item.row.listing');
@@ -33,6 +37,9 @@ export async function scrapeMozilla() {
             });
 
             return data;
+
+            contadorPaginas = contadorPaginas +1;
+
         });
 
         for (let articulo of nuevosArticulos) {
@@ -40,7 +47,7 @@ export async function scrapeMozilla() {
                 const articlePage = await browser.newPage();
                 await articlePage.goto(articulo.enlace, {
                     waitUntil: 'domcontentloaded',
-                    timeout: 60000 
+                    timeout: 80000 
                 });
 
                 const autor = await articlePage.evaluate(() => {
@@ -50,8 +57,11 @@ export async function scrapeMozilla() {
 
                 articulo.autor = autor;
                 await articlePage.close();
+                console.log('Obtuvo autor',autor)
             } catch {
                 articulo.autor = 'Autor no disponible';
+                console.log("no se pudo obtener")
+                
             }
         }
 
@@ -67,7 +77,7 @@ export async function scrapeMozilla() {
             urlAnterior = urlActual;
 
             await Promise.all([
-                page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+                page.waitForNavigation({ waitUntil: 'domcontentloaded',timeout: 60000 }),
                 siguiente.click()
             ]);
 
