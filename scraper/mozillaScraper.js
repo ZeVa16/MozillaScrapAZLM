@@ -1,20 +1,19 @@
 import puppeteer from 'puppeteer';
+
 import { saveToJSON } from '../methods/saveToJSON.js';
 import { saveToCSV } from '../methods/saveToCSV.js';
 import { saveToExcel } from '../methods/saveToEXEL.js';
 import { saveToTXT } from '../methods/saveToTXT.js';
 import { saveToPDF } from '../methods/saveToPDF.js';
 
-
 const URL = 'https://hacks.mozilla.org/';
 
 export async function scrapeMozilla() {
-    const browser = await puppeteer.launch({ headless: true, defaultViewport: null });
-    console.log('Ingreso a la pagina')
+    const browser = await puppeteer.launch({ headless: false, defaultViewport: null });
     const page = await browser.newPage();
     await page.goto(URL, { waitUntil: 'domcontentloaded' });
 
-    await page.waitForSelector('li.list-item.row.listing', { timeout: 80000 });
+    await page.waitForSelector('li.list-item.row.listing', { timeout: 60000 });
 
     let articulos = [];
     let haySiguiente = true;
@@ -35,9 +34,6 @@ export async function scrapeMozilla() {
             });
 
             return data;
-
-            
-
         });
 
         for (let articulo of nuevosArticulos) {
@@ -45,9 +41,10 @@ export async function scrapeMozilla() {
                 const articlePage = await browser.newPage();
                 await articlePage.goto(articulo.enlace, {
                     waitUntil: 'domcontentloaded',
-                    timeout: 80000 
+                    timeout: 60000
                 });
 
+                await articlePage.waitForSelector('.byline .url', { timeout: 5000 }).catch(() => {});
                 const autor = await articlePage.evaluate(() => {
                     const autorElemento = document.querySelector('.byline .url');
                     return autorElemento ? autorElemento.textContent.trim() : 'Autor no disponible';
@@ -55,11 +52,9 @@ export async function scrapeMozilla() {
 
                 articulo.autor = autor;
                 await articlePage.close();
-                console.log('Obtuvo autor',autor)
-            } catch {
+            } catch (e) {
                 articulo.autor = 'Autor no disponible';
-                console.log("no se pudo obtener")
-                
+                console.error(`Error al obtener autor del artículo: ${articulo.enlace}`, e.message);
             }
         }
 
@@ -75,7 +70,7 @@ export async function scrapeMozilla() {
             urlAnterior = urlActual;
 
             await Promise.all([
-                page.waitForNavigation({ waitUntil: 'domcontentloaded',timeout: 60000 }),
+                page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
                 siguiente.click()
             ]);
 
@@ -87,9 +82,12 @@ export async function scrapeMozilla() {
 
     await browser.close();
 
+
     saveToJSON(articulos, 'articulos');
     saveToCSV(articulos, 'articulos');
     saveToExcel(articulos, 'articulos');
     saveToTXT(articulos, 'articulos');
     saveToPDF(articulos, 'articulos');
+
+    console.log(`Scraping completo. Se guardaron ${articulos.length} artículos.`);
 }
