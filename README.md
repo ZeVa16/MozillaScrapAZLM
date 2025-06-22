@@ -17,6 +17,6 @@ La información recolectada se guarda en formatos `.json`, `.csv`,`.xlsx` , `.tx
 ```
 # 3.  Correr el proyecto
   ```bash
-  npm install
+  npm start
 ```
  Los archivos generados pueden verse en la carpeta de data 
